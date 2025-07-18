@@ -5,9 +5,15 @@ from database import engine, SessionLocal
 import models
 from pydantic import BaseModel
 from typing import Optional
+from schemas import JobCreate, JobOut
+from typing import List
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Job Tracker API",
+    description="Track your job applications, update statuses, and manage job hunting progress.",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,12 +33,8 @@ def get_db():
         db.close()
 
 
-class JobCreate(BaseModel):
-    company: str
-    position: str
-    status: str = "Applied"
 
-@app.get("/jobs")
+@app.get("/jobs", response_model=List[JobOut], tags=["Jobs"], summary="List all jobs")
 def get_jobs(
     status: Optional[str] = None, # make status filter optional
     sort: Optional[str] = None,
@@ -49,7 +51,7 @@ def get_jobs(
     offset = (page-1) * limit
     return query.offset(offset).limit(limit).all()
 
-@app.post("/jobs")
+@app.post("/jobs", response_model=JobOut, tags=["Jobs"], summary="Create a new job")
 def create_job(job: JobCreate, db: Session = Depends(get_db)):
     new_job = models.JobApplication(**job.dict())
     db.add(new_job)
@@ -57,7 +59,7 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
     db.refresh(new_job)
     return new_job
 
-@app.get("/jobs/{job_id}")
+@app.get("/jobs/{job_id}", response_model=JobOut, tags=["Jobs"], summary="Get a job by ID")
 def get_job(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()
     if not job:
@@ -67,8 +69,8 @@ def get_job(job_id: int, db: Session = Depends(get_db)):
 class JobUpdate(BaseModel):
     status: str
 
-@app.put("/jobs/{job_id}")
-def udpate_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)):
+@app.put("/jobs/{job_id}", response_model=JobOut, tags=["Jobs"], summary="Update job status")
+def update_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)):
     job = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -77,7 +79,7 @@ def udpate_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)
     db.refresh(job)
     return job
 
-@app.delete("/jobs/{job_id}")
+@app.delete("/jobs/{job_id}", tags=["Jobs"], summary="Delete a job")
 def delete_job(job_id: int, db: Session = Depends(get_db)):
     job = db.query(models.JobApplication).filter(models.JobApplication.id == job_id).first()
     if not job:
@@ -88,13 +90,10 @@ def delete_job(job_id: int, db: Session = Depends(get_db)):
 
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def read_root():
-    return {"message": "Job Tracker API is running!"}
+    return {"message": "Welcome to the Job Tracker API. Use /docs to explore the endpoints."}
 
-@app.get("/jobs")
-def get_jobs(db: Session = Depends(get_db)):
-    return db.query(models.JobApplication).all()
 
 if __name__ == "__main__":
     import uvicorn
