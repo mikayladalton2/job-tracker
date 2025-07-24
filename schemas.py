@@ -13,5 +13,7 @@ class JobCreate(BaseModel):
 # used when returning a job from the API (include ID)
 class JobOut(JobCreate):
     id: int
+    date_applied: Optional[datetime]
+    
     class Config:
         orm_mode = True

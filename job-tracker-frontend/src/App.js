@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { getJobs, createJob, deleteJob, updateJobStatus } from "./api";
+import { getJobs, createJob, deleteJob, updateJob } from "./api";
 
 function App() {
   const [jobs, setJobs] = useState([]);
   const [form, setForm] = useState({
     company: "",
     position: "",
-    status: "Applied"
+    status: "Applied",
+    date_applied: "",
   });
+  const [editingJobId, setEditingJobId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   useEffect(() => {
     fetchJobs();
@@ -29,7 +32,7 @@ function App() {
     createJob(form)
       .then((newJob) => {
         setJobs([...jobs, newJob]);
-        setForm({ company: "", position: "", status: "Applied" });
+        setForm({ company: "", position: "", status: "Applied", date_applied: "" });
       })
       .catch((error) => {
         console.error("Error creating job:", error);
@@ -49,13 +52,23 @@ function App() {
     }
   };
 
-  const handleStatusChange = async (id, newStatus) => {
+  const handleEditClick = (job) => {
+    setEditingJobId(job.id);
+    setEditForm({ ...job });
+  };
+  
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSave = async () => {
     try {
-      const updatedJob = await updateJobStatus(id, newStatus);
-      setJobs(jobs.map(job => job.id === id ? updatedJob : job));
+      const updated = await updateJob(editForm.id, editForm);
+      setJobs(jobs.map((job) => (job.id === updated.id ? updated : job)));
+      setEditingJobId(null);
     } catch (err) {
       console.error("Error updating job:", err);
-      alert("Failed to update job status.");
+      alert("Failed to save changes.");
     }
   };
 
@@ -88,10 +101,17 @@ function App() {
           style={{ marginRight: "1rem" }}
         >
           <option value="Applied">Applied</option>
-          <option value="Interviewed">Interviewed</option>
+          <option value="Interviewing">Interviewing</option>
           <option value="Offer">Offer</option>
           <option value="Rejected">Rejected</option>
         </select>
+        <input
+          type="date"
+          name="date_applied"
+          value={form.date_applied}
+          onChange={handleChange}
+          style={{ marginRight: "1rem" }}
+        />
         <button type="submit">Add Job</button>
       </form>
 
@@ -102,6 +122,7 @@ function App() {
             <th>Company</th>
             <th>Position</th>
             <th>Status</th>
+            <th>Date Applied</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -109,29 +130,70 @@ function App() {
           {jobs.length > 0 ? (
             jobs.map(job => (
               <tr key={job.id}>
-                <td>{job.company}</td>
-                <td>{job.position}</td>
-                <td>
-                  <select
-                    value={job.status}
-                    onChange={(e) => handleStatusChange(job.id, e.target.value)}
-                  >
-                    <option value="Applied">Applied</option>
-                    <option value="Interviewed">Interviewed</option>
-                    <option value="Offer">Offer</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
-                </td>
-                <td>
-                  <button onClick={() => handleDelete(job.id)} style={{ color: "red" }}>
-                    Delete
-                </button>
-        </td>
+                {editingJobId === job.id ? (
+                  <>
+                    <td>
+                      <input
+                        name="company"
+                        value={editForm.company}
+                        onChange={handleEditChange}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        name="position"
+                        value={editForm.position}
+                        onChange={handleEditChange}
+                      />
+                    </td>
+                    <td>
+                      <select
+                        name="status"
+                        value={editForm.status}
+                        onChange={handleEditChange}
+                      >
+                        <option value="Applied">Applied</option>
+                        <option value="Interviewing">Interviewing</option>
+                        <option value="Offer">Offer</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="date"
+                        name="date_applied"
+                        value={editForm.date_applied?.slice(0, 10)}
+                        onChange={handleEditChange}
+                      />
+                    </td>
+                    <td>
+                      <button onClick={handleEditSave}>Save</button>
+                      <button onClick={() => setEditingJobId(null)}>Cancel</button>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td>{job.company}</td>
+                    <td>{job.position}</td>
+                    <td>{job.status}</td>
+                    <td>
+                      {job.date_applied
+                        ? new Date(job.date_applied).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td>
+                      <button onClick={() => handleEditClick(job)}>Edit</button>
+                      <button onClick={() => handleDelete(job.id)} style={{ color: "red" }}>
+                        Delete
+                      </button>
+                    </td>
+                  </>
+                )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="3">No jobs found</td>
+              <td colSpan="5">No jobs found</td>
             </tr>
           )}
         </tbody>

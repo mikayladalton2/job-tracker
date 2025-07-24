@@ -23,3 +23,8 @@ export async function updateJobStatus(id, status) {
   });
   return res.data;
 }
+
+export async function updateJob(id, jobData) {
+  const res = await axios.put(`${API_BASE}/jobs/${id}`, jobData);
+  return res.data;
+}
