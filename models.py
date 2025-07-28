@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
 
@@ -12,3 +12,4 @@ class JobApplication(Base):
     position = Column(String)
     status = Column(String, default="Applied", index=True)  # Applied, Interviewed, Offer, Rejected
     date_applied = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+    description = Column(Text, nullable=True)

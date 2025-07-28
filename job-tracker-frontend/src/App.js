@@ -8,6 +8,7 @@ function App() {
     position: "",
     status: "Applied",
     date_applied: "",
+    description: "",
   });
   const [editingJobId, setEditingJobId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -111,6 +112,13 @@ function App() {
           value={form.date_applied}
           onChange={handleChange}
           style={{ marginRight: "1rem" }}
+        />
+        <textarea
+          name="description"
+          placeholder="Job Description"
+          value={form.description}
+          onChange={handleChange}
+          style={{ marginRight: "1rem", verticalAlign: "top" }}
         />
         <button type="submit">Add Job</button>
       </form>

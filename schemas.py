@@ -9,6 +9,7 @@ class JobCreate(BaseModel):
     position: str
     status: Optional[str] = "Applied"
     date_applied: Optional[datetime] = None
+    description: Optional[str] = None
 
 # used when returning a job from the API (include ID)
 class JobOut(JobCreate):
